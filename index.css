@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #020412;
+  color: white;
+  overflow: hidden;
+}
+
+@keyframes pulse-neon {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.8));
+  }
+}
+
+@keyframes staked-flicker {
+  0%, 100% { opacity: 1; border-color: rgba(236, 72, 153, 0.8); box-shadow: 0 0 15px rgba(236, 72, 153, 0.4), inset 0 0 10px rgba(236, 72, 153, 0.2); }
+  33% { opacity: 0.95; border-color: rgba(236, 72, 153, 0.4); box-shadow: 0 0 5px rgba(236, 72, 153, 0.2); }
+  66% { opacity: 1; border-color: rgba(34, 211, 238, 0.8); box-shadow: 0 0 20px rgba(34, 211, 238, 0.4), inset 0 0 15px rgba(34, 211, 238, 0.2); }
+}
+
+@keyframes mining-pulse {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.3); opacity: 1; filter: blur(1px); }
+  100% { transform: scale(1); opacity: 0.5; }
+}
+
+@keyframes success-burst {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7); }
+  50% { border-color: white; }
+  100% { transform: scale(1); box-shadow: 0 0 0 30px rgba(34, 211, 238, 0); }
+}
+
+@keyframes sparkle-float {
+  0% { transform: translate(0, 0) scale(0); opacity: 1; }
+  100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.5); opacity: 0; }
+}
+
+@keyframes energy-scan {
+  0% { transform: translateX(-100%) skewX(-45deg); }
+  100% { transform: translateX(200%) skewX(-45deg); }
+}
+
+.staked-card {
+  animation: staked-flicker 4s infinite alternate ease-in-out;
+}
+
+.staked-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: energy-scan 3s infinite linear;
+  pointer-events: none;
+}
+
+.mining-dot {
+  animation: mining-pulse 1.2s infinite;
+}
+
+.just-staked {
+  animation: success-burst 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: sparkle-float 0.8s ease-out forwards;
+}
+
+.neon-glow {
+  animation: pulse-neon 2s infinite;
+}
+
+/* Hide scrollbars but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
