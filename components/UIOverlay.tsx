@@ -4,20 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { AppState, GachaItem } from '../types';
 import { 
   HelpCircle, Sparkles, ChevronRight, Zap, Target, Hammer, Boxes, 
-  Activity, CheckCircle2, TrendingUp, ShoppingBag, 
+  Activity, TrendingUp, ShoppingBag, 
   ArrowUpCircle, DollarSign, Filter, ArrowUpDown, Tag, 
-  Package, RefreshCcw, LayoutGrid, Trash2
+  Package, RefreshCcw, LayoutGrid, Trash2, Mic, MicOff
 } from 'lucide-react';
+
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  tx: number;
+  ty: number;
+  color: string;
+}
 
 interface UIOverlayProps {
   luckiness: number;
   isGenerating: boolean;
   currentReward: GachaItem | null;
-  onSummon: (count: number) => void;
+  onSummon: (count: number, prompt?: string) => void;
   onCloseReveal: () => void;
   appState: AppState;
   activeTab: 'portal' | 'rig' | 'market';
@@ -33,6 +42,9 @@ interface UIOverlayProps {
   onBuy: (id: string) => void;
   onRefreshShop: () => void;
   onOpenMysteryCache: () => void;
+  isVoiceActive: boolean;
+  onToggleVoice: () => void;
+  liveTranscript: { input: string; output: string };
 }
 
 export const UIOverlay: React.FC<UIOverlayProps> = ({
@@ -54,11 +66,16 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
   shopItems,
   onBuy,
   onRefreshShop,
-  onOpenMysteryCache
+  onOpenMysteryCache,
+  isVoiceActive,
+  onToggleVoice,
+  liveTranscript
 }) => {
   const [filterRarity, setFilterRarity] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'power' | 'level' | 'rarity'>('rarity');
   const [marketView, setMarketView] = useState<'shop' | 'sell'>('shop');
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const [animatingId, setAnimatingId] = useState<string | null>(null);
   
   const filteredInventory = useMemo(() => {
     let list = [...inventory];
@@ -96,9 +113,55 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
     return 'bg-slate-500/20';
   };
 
+  const handleToggleStakeWithFeedback = useCallback((e: React.MouseEvent, id: string) => {
+    const isStaking = !stakedIds.has(id);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
+    setAnimatingId(id);
+    onToggleStake(id);
+
+    // Generate particles
+    const newParticles: Particle[] = Array.from({ length: 12 }).map((_, i) => ({
+      id: Math.random(),
+      x,
+      y,
+      tx: (Math.random() - 0.5) * 200,
+      ty: (Math.random() - 0.5) * 200,
+      color: isStaking ? '#ec4899' : '#22d3ee'
+    }));
+
+    setParticles(prev => [...prev, ...newParticles]);
+
+    setTimeout(() => {
+      setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
+    }, 800);
+
+    setTimeout(() => {
+      setAnimatingId(null);
+    }, 600);
+  }, [stakedIds, onToggleStake]);
+
   return (
-    <div className="absolute inset-0 pointer-events-none select-none flex flex-col font-sans">
+    <div className="absolute inset-0 pointer-events-none select-none flex flex-col font-sans overflow-hidden">
       
+      {/* Particles Layer */}
+      {particles.map(p => (
+        <div 
+          key={p.id} 
+          className="particle" 
+          style={{ 
+            left: p.x, 
+            top: p.y, 
+            backgroundColor: p.color,
+            boxShadow: `0 0 8px ${p.color}`,
+            '--tx': `${p.tx}px`, 
+            '--ty': `${p.ty}px` 
+          } as React.CSSProperties} 
+        />
+      ))}
+
       {/* --- Header --- */}
       <div className="pt-8 px-6 flex justify-between items-start relative z-10">
         <div className="flex flex-col">
@@ -116,6 +179,19 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
                 </div>
             </div>
         </div>
+        
+        {/* Voice Portal Button */}
+        <button 
+          onClick={onToggleVoice}
+          className={`pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${
+            isVoiceActive 
+              ? 'bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.4)]' 
+              : 'bg-cyan-400/20 border-cyan-400/50 text-cyan-300 backdrop-blur-sm'
+          }`}
+        >
+          {isVoiceActive ? <MicOff size={20} /> : <Mic size={20} />}
+          <span className="text-xs font-black uppercase tracking-widest">{isVoiceActive ? 'Close Oracle' : 'Voice Portal'}</span>
+        </button>
       </div>
 
       {/* --- Tabs --- */}
@@ -154,12 +230,53 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
 
       {activeTab === 'portal' && (
         <>
-            <div className="flex-1 flex flex-col justify-center items-center">
+            <div className="flex-1 flex flex-col justify-center items-center relative">
                 {appState === AppState.STABLE && (
                     <div className="bg-black/60 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-2 animate-pulse">
                         <Activity size={18} className="text-cyan-400" />
                         <span className="text-xs text-white font-black tracking-widest uppercase">Nodes Online: QuantumCore-Sun</span>
                     </div>
+                )}
+                
+                {/* Voice Interaction Overlay */}
+                {isVoiceActive && (
+                  <div className="absolute inset-x-0 bottom-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4">
+                    <div className="w-full max-w-lg bg-black/80 backdrop-blur-2xl rounded-3xl border border-cyan-500/30 p-6 flex flex-col items-center gap-4 shadow-2xl">
+                        <div className="flex items-center gap-2 mb-2">
+                           <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                           <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em]">Oracle Active</span>
+                        </div>
+                        
+                        <div className="flex flex-col w-full gap-2">
+                            {liveTranscript.input && (
+                              <p className="text-sm font-bold text-white/90 italic bg-white/5 p-3 rounded-xl border border-white/5">
+                                "{liveTranscript.input}"
+                              </p>
+                            )}
+                            {liveTranscript.output && (
+                              <p className="text-sm font-black text-cyan-300 leading-relaxed bg-cyan-500/5 p-3 rounded-xl border border-cyan-500/10">
+                                {liveTranscript.output}
+                              </p>
+                            )}
+                            {!liveTranscript.input && !liveTranscript.output && (
+                              <p className="text-xs font-bold text-white/30 text-center uppercase tracking-widest py-4">
+                                Speak your heart's desire... "Oracle, summon a golden solar hammer"
+                              </p>
+                            )}
+                        </div>
+
+                        {/* Visual Pulse */}
+                        <div className="flex gap-1 items-center h-4">
+                            {[...Array(12)].map((_, i) => (
+                              <div 
+                                key={i} 
+                                className="w-1 bg-cyan-400 rounded-full animate-pulse" 
+                                style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 0.1}s` }}
+                              />
+                            ))}
+                        </div>
+                    </div>
+                  </div>
                 )}
             </div>
 
@@ -214,13 +331,16 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
                     ) : (
                         filteredInventory.map((item) => {
                           const isStaked = stakedIds.has(item.id);
+                          const isAnimating = animatingId === item.id;
                           const powerWithBonus = (item.miningPower * (1 + (item.level - 1) * 0.2)).toFixed(1);
                           const hasDuplicate = inventory.some(i => i.name === item.name && i.id !== item.id && !stakedIds.has(i.id));
                           
                           return (
                             <div key={item.id} className={`p-5 rounded-[2rem] border-2 flex items-center justify-between transition-all duration-300 relative overflow-hidden ${
-                                isStaked ? 'staked-card border-pink-500/50 bg-pink-500/10' : 'bg-indigo-900/30 border-white/5'
+                                isStaked ? 'staked-card border-pink-500/50' : 'bg-indigo-900/30 border-white/5'
                             }`}>
+                                {isAnimating && <div className="just-staked-overlay" />}
+
                                 <div className="flex items-center gap-5 relative z-10">
                                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center relative ${getRarityBg(item.rarity)}`}>
                                         <Boxes size={24} className={getRarityColor(item.rarity)} />
@@ -248,9 +368,12 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
                                     }`}>
                                         <ArrowUpCircle size={16} /> {hasDuplicate ? 'FUSE' : 'UPGRADE'}
                                     </button>
-                                    <button onClick={() => onToggleStake(item.id)} className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase transition-all shadow-lg ${
-                                        isStaked ? 'bg-pink-500 text-white shadow-pink-500/30' : 'bg-indigo-800/40 text-indigo-200 border border-indigo-500/20'
-                                    }`}>
+                                    <button 
+                                      onClick={(e) => handleToggleStakeWithFeedback(e, item.id)} 
+                                      className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase transition-all shadow-lg active:scale-90 ${
+                                          isStaked ? 'bg-pink-500 text-white shadow-pink-500/30' : 'bg-indigo-800/40 text-indigo-200 border border-indigo-500/20'
+                                      }`}
+                                    >
                                         {isStaked ? 'OFFLINE' : 'STAKE'}
                                     </button>
                                 </div>

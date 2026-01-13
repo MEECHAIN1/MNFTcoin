@@ -20,65 +20,90 @@ body {
 }
 
 @keyframes staked-flicker {
-  0%, 100% { opacity: 1; border-color: rgba(236, 72, 153, 0.8); box-shadow: 0 0 15px rgba(236, 72, 153, 0.4), inset 0 0 10px rgba(236, 72, 153, 0.2); }
-  33% { opacity: 0.95; border-color: rgba(236, 72, 153, 0.4); box-shadow: 0 0 5px rgba(236, 72, 153, 0.2); }
-  66% { opacity: 1; border-color: rgba(34, 211, 238, 0.8); box-shadow: 0 0 20px rgba(34, 211, 238, 0.4), inset 0 0 15px rgba(34, 211, 238, 0.2); }
+  0%, 100% { 
+    border-color: rgba(236, 72, 153, 0.9); 
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.4), inset 0 0 15px rgba(236, 72, 153, 0.2); 
+    background-color: rgba(236, 72, 153, 0.15);
+  }
+  50% { 
+    border-color: rgba(34, 211, 238, 0.9); 
+    box-shadow: 0 0 30px rgba(34, 211, 238, 0.5), inset 0 0 20px rgba(34, 211, 238, 0.25); 
+    background-color: rgba(34, 211, 238, 0.1);
+  }
 }
 
 @keyframes mining-pulse {
-  0% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.3); opacity: 1; filter: blur(1px); }
-  100% { transform: scale(1); opacity: 0.5; }
+  0% { transform: scale(1); opacity: 0.5; filter: drop-shadow(0 0 2px currentColor); }
+  50% { transform: scale(1.4); opacity: 1; filter: drop-shadow(0 0 8px currentColor) blur(0.5px); }
+  100% { transform: scale(1); opacity: 0.5; filter: drop-shadow(0 0 2px currentColor); }
 }
 
 @keyframes success-burst {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7); }
-  50% { border-color: white; }
-  100% { transform: scale(1); box-shadow: 0 0 0 30px rgba(34, 211, 238, 0); }
+  0% { transform: scale(0.9); opacity: 0; box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.8); }
+  30% { opacity: 1; }
+  100% { transform: scale(1.05); opacity: 0; box-shadow: 0 0 0 40px rgba(236, 72, 153, 0); }
 }
 
-@keyframes sparkle-float {
-  0% { transform: translate(0, 0) scale(0); opacity: 1; }
-  100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.5); opacity: 0; }
+@keyframes sparkle-burst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
 }
 
 @keyframes energy-scan {
-  0% { transform: translateX(-100%) skewX(-45deg); }
-  100% { transform: translateX(200%) skewX(-45deg); }
+  0% { transform: translateY(-100%) skewY(10deg); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: translateY(200%) skewY(10deg); opacity: 0; }
+}
+
+@keyframes holographic-glitch {
+  0% { clip-path: inset(80% 0 0 0); transform: translate(-2px, 1px); }
+  10% { clip-path: inset(10% 0 80% 0); transform: translate(2px, -1px); }
+  20% { clip-path: inset(80% 0 0 0); transform: translate(-2px, 1px); }
+  100% { clip-path: inset(80% 0 0 0); transform: translate(-2px, 1px); }
 }
 
 .staked-card {
-  animation: staked-flicker 4s infinite alternate ease-in-out;
+  animation: staked-flicker 3s infinite ease-in-out;
+  position: relative;
+  z-index: 10;
 }
 
-.staked-card::after {
+.staked-card::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent);
-  animation: energy-scan 3s infinite linear;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.8), transparent);
+  animation: energy-scan 2s infinite linear;
   pointer-events: none;
+  z-index: 5;
 }
 
 .mining-dot {
-  animation: mining-pulse 1.2s infinite;
+  animation: mining-pulse 1s infinite;
 }
 
-.just-staked {
-  animation: success-burst 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.sparkle {
+.just-staked-overlay {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  border-radius: inherit;
+  border: 4px solid white;
+  animation: success-burst 0.6s ease-out forwards;
+}
+
+.particle {
+  position: fixed;
+  width: 6px;
+  height: 6px;
   background: white;
   border-radius: 50%;
   pointer-events: none;
-  animation: sparkle-float 0.8s ease-out forwards;
+  z-index: 100;
+  animation: sparkle-burst 0.8s ease-out forwards;
 }
 
 .neon-glow {

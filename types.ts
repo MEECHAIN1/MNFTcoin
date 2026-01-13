@@ -14,7 +14,8 @@ export enum AppState {
   REBUILDING = 'REBUILDING',
   STAKING = 'STAKING',
   EVOLVING = 'EVOLVING',
-  MARKET = 'MARKET'
+  MARKET = 'MARKET',
+  LIVE = 'LIVE'
 }
 
 export interface VoxelData {
